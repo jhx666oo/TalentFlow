@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv-macos/
+
+# Env & Secrets
+.env
+
+# Logs
+log/
+
+# Uploads
+upload/
+
+# Frontend
+node_modules/
+dist/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
