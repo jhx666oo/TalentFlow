@@ -2,6 +2,8 @@
 
 AI 驱动的全流程智能招聘管理平台，支持简历自动解析、候选人管理、面试协同调度。
 
+**在线体验**：[www.ai-bot.icu](https://www.ai-bot.icu)
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -103,3 +105,19 @@ npm run dev
 ## API 文档
 
 启动后端后访问 http://127.0.0.1:8000/docs 查看 Swagger API 文档。
+
+## 线上部署
+
+| 服务 | 地址 |
+|------|------|
+| 前端 | [www.ai-bot.icu](https://www.ai-bot.icu) (Vercel) |
+| API | [api.ai-bot.icu](https://api.ai-bot.icu) (阿里云 ECS + Docker) |
+
+### Docker 部署
+
+```bash
+# 在项目根目录
+docker compose up -d
+```
+
+服务包括：PostgreSQL 16、Redis 7、FastAPI 后端（Gunicorn + Uvicorn）、Caddy（自动 SSL）。
