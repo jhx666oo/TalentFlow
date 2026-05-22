@@ -139,10 +139,14 @@ const renderChart = () => {
           },
         },
         areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(79, 70, 229, 0.25)' },
-            { offset: 1, color: 'rgba(79, 70, 229, 0.02)' },
-          ]),
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(79, 70, 229, 0.25)' },
+              { offset: 1, color: 'rgba(79, 70, 229, 0.02)' },
+            ],
+          },
         },
       },
     ],
