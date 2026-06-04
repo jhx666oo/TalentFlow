@@ -41,7 +41,7 @@ class UserInviteSchema(BaseModel):
 
 class UserRegisterSchema(BaseModel):
     email: EmailStr = Field(..., description="邮箱")
-    invite_code: str = Field(..., min_length=6, max_length=6, description="邀请码")
+    invite_code: Optional[str] = Field(None, min_length=6, max_length=6, description="邀请码")
     username: str = Field(..., description="用户名")
     realname: str = Field(..., description="真实姓名")
     password: str = Field(..., min_length=6, max_length=20, description="密码")

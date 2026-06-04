@@ -114,26 +114,39 @@ async def register(
     cache: HRCache = Depends(get_cache_instance),
 ):
     email = register_data.email
-    # 1. 校验邮箱和邀请码是否正确
-    invite_info: InviteInfoSchema = await cache.get_invite_info(str(email))
-    if not invite_info:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该邮箱账号不存在！")
-    if invite_info.invite_code != register_data.invite_code:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="邀请码错误！")
 
     async with session.begin():
-        # 3. 校验邮箱是否已经注册
+        # 1. 校验邮箱是否已经注册
         user_repo = UserRepo(session)
         user: UserModel = await user_repo.get_by_email(str(email))
         if user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该邮箱已被注册！")
-        # 4. 创建用户
+
+        # 2. 确定部门：优先使用邀请码中的部门，否则使用默认部门
+        department_id = None
+        invite_code = register_data.invite_code
+        if invite_code:
+            invite_info = await cache.get_invite_info(str(email))
+            if invite_info and invite_info.invite_code == invite_code:
+                department_repo = DepartmentRepo(session)
+                department = await department_repo.get_by_id(invite_info.department_id)
+                if department:
+                    department_id = invite_info.department_id
+
+        if not department_id:
+            department_repo = DepartmentRepo(session)
+            default_dept = await department_repo.get_by_name("人事部")
+            if not default_dept:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="系统错误：无默认部门！")
+            department_id = default_dept.id
+
+        # 3. 创建用户
         await user_repo.create_user({
             "email": email,
             "username": register_data.username,
             "realname": register_data.realname,
             "password": register_data.password,
-            "department_id": invite_info.department_id,
+            "department_id": department_id,
         })
     return ResponseSchema()
 

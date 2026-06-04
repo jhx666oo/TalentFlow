@@ -22,15 +22,6 @@
         />
       </el-form-item>
 
-      <el-form-item label="邀请码" prop="invite_code">
-        <el-input
-          v-model="ruleForm.invite_code"
-          size="large"
-          placeholder="请输入邀请码"
-          :prefix-icon="Ticket"
-        />
-      </el-form-item>
-
       <div class="grid grid-cols-2 gap-4">
         <el-form-item label="用户名" prop="username">
           <el-input
@@ -94,14 +85,13 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import AuthLayout from '@/components/AuthLayout.vue'
 import { register, type RegisterData } from '@/apis/user_api'
-import { Message, Lock, Ticket, User, UserFilled } from '@element-plus/icons-vue'
+import { Message, Lock, User, UserFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const ruleFormRef = ref<FormInstance>()
 
 const ruleForm = reactive({
   email: '',
-  invite_code: '',
   username: '',
   realname: '',
   password: '',
@@ -123,7 +113,6 @@ const rules = reactive<FormRules<typeof ruleForm>>({
     { required: true, message: '请输入邮箱地址', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] },
   ],
-  invite_code: [{ required: true, message: '请输入邀请码', trigger: 'blur' }],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 2, max: 20, message: '用户名长度应为 2 到 20 个字符', trigger: 'blur' },

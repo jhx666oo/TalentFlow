@@ -8,7 +8,6 @@ export interface LoginData {
 
 export interface RegisterData {
   email: string
-  invite_code: string
   username: string
   realname: string
   password: string
