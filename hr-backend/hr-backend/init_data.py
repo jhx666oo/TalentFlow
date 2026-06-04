@@ -55,7 +55,7 @@ async def init_user():
                     "username": "Boss",
                     "password": "111111",
                     "email": "boss@qq.com",
-                    "realname": "黄老板",
+                    "realname": "金老板",
                     "is_superuser": True,
                     "department_id": hr_department.id,
                 }, {
