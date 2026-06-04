@@ -34,5 +34,12 @@ asyncio.run(ensure_agent_db())
 echo "Seeding initial data..."
 python init_data.py
 
+echo "Starting email scheduler in background..."
+python -c "
+import asyncio
+from scheduler import start_email_polling
+asyncio.run(start_email_polling())
+" &
+
 echo "Starting Gunicorn..."
 exec gunicorn main:app -c gunicorn.conf.py
