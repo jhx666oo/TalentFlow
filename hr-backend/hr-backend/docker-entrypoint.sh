@@ -14,5 +14,8 @@ asyncio.run(init())
 "
 fi
 
+echo "Seeding initial data..."
+python init_data.py
+
 echo "Starting Gunicorn..."
 exec gunicorn main:app -c gunicorn.conf.py

@@ -1,6 +1,8 @@
 import asyncio
+from sqlalchemy import select, func
 from repository.user_repo import UserRepo, DepartmentRepo
-from models import AsyncSessionFactory
+from models import AsyncSessionFactory, Base
+from models.user import UserModel, DepartmentModel
 import sys
 # Fix for Windows psycopg issue with ProactorEventLoop
 if sys.platform == "win32":
@@ -9,9 +11,13 @@ if sys.platform == "win32":
 
 async def init_department():
     async with AsyncSessionFactory() as session:
-        # 开启事务
         async with session.begin():
             department_repo = DepartmentRepo(session)
+            # Check if departments already exist
+            count = await session.scalar(select(func.count(DepartmentModel.id)))
+            if count and count > 0:
+                print(f"部门已存在 ({count} 个)，跳过初始化。")
+                return
             department_dict_list = [
                 {"name": "人事部", "description": "人事部门"},
                 {"name": "技术部", "description": "负责产品和技术部"},
@@ -30,6 +36,11 @@ async def init_user():
     async with AsyncSessionFactory() as session:
         async with session.begin():
             user_repo = UserRepo(session)
+            # Check if users already exist
+            count = await session.scalar(select(func.count(UserModel.id)))
+            if count and count > 0:
+                print(f"用户已存在 ({count} 个)，跳过初始化。")
+                return
             department_repo = DepartmentRepo(session)
             hr_department = await department_repo.get_by_name("人事部")
             tech_department = await department_repo.get_by_name("技术部")
