@@ -37,8 +37,8 @@ async def lifespan(_: FastAPI):
         decode_responses=True,
     )
     cache_backend = RedisBackend(redis_client)
-    FastAPICache.init(cache_backend, prefix="fastapi-cache")
-
+    try: FastAPICache.init(cache_backend, prefix="fastapi-cache")
+    except AssertionError: pass
     # bot, scheduler = await start_email_polling()
 
     yield

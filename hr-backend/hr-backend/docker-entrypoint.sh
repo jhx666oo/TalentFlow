@@ -15,7 +15,7 @@ asyncio.run(init())
 fi
 
 echo "Ensuring agent database exists..."
-python -c "
+python3 -c "
 import asyncio
 from sqlalchemy import text
 from models import engine
@@ -35,11 +35,7 @@ echo "Seeding initial data..."
 python init_data.py
 
 echo "Starting email scheduler in background..."
-python -c "
-import asyncio
-from scheduler import start_email_polling
-asyncio.run(start_email_polling())
-" &
+python start_scheduler.py &
 
 echo "Starting Gunicorn..."
-exec gunicorn main:app -c gunicorn.conf.py
+gunicorn main:app -c gunicorn.conf.py

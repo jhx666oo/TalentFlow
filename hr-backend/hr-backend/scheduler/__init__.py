@@ -1,5 +1,3 @@
-# uv add apscheduler
-
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from core.email_bot import EmailBot
 from core.email_bot.settings import EmailBotSettings
@@ -8,6 +6,12 @@ from agents.candidate import CandidateProcessAgent
 from langchain.messages import HumanMessage
 from settings import settings
 from core.cache import HRCache
+from sqlalchemy import select
+from models import AsyncSessionFactory
+from models.candidate import CandidateModel
+from schemas.candidate_schema import CandidateSchema
+from schemas.position_schema import PositionSchema
+from schemas.user_schema import UserSchema
 
 scheduler = AsyncIOScheduler()
 
@@ -26,30 +30,50 @@ async def poll_and_process_emails(bot: EmailBot, state: dict):
 
         new_emails.sort(key=lambda e: int(e.uid))
 
-        async with CandidateProcessAgent() as agent:
-            for mail in new_emails:
-                if mail.from_.address.lower() == bot.settings.email.lower():
-                    continue
+        for mail in new_emails:
+            if mail.from_.address.lower() == bot.settings.email.lower():
+                continue
 
-                thread_id = mail.from_.address
-                response = await agent.ainvoke(
-                    messages=[HumanMessage(content=f"收到邮件内容：{mail.text or mail.html}")],
-                    thread_id=thread_id
-                )
-                logger.info(f"Processed email from {thread_id}, response: {response}")
+            thread_id = mail.from_.address
+            async with AsyncSessionFactory() as session:
+                async with session.begin():
+                    stmt = select(CandidateModel).where(CandidateModel.email == thread_id)
+                    result = await session.scalars(stmt)
+                    candidates = result.all()
+                    if not candidates:
+                        logger.warning(f"No candidate for {thread_id}")
+                        state["last_uid"] = max(state["last_uid"], int(mail.uid))
+                        cache = HRCache()
+                        await cache.set_email_last_uid(state["last_uid"])
+                        continue
 
-                state["last_uid"] = max(state["last_uid"], int(mail.uid))
-                cache = HRCache()
-                await cache.set_email_last_uid(state["last_uid"])
+                    c = candidates[0]
+                    candidate_schema = CandidateSchema.model_validate(c)
+                    position_schema = PositionSchema.model_validate(c.position)
+                    interviewer_schema = UserSchema.model_validate(c.position.creator)
 
-            logger.info(f"Processed {len(new_emails)} new emails, last_uid now {state['last_uid']}")
+                    async with CandidateProcessAgent(
+                        candidate=candidate_schema,
+                        position=position_schema,
+                        interviewer=interviewer_schema,
+                    ) as agent:
+                        response = await agent.ainvoke(
+                            messages=[HumanMessage(content=f"receive email: {mail.text or mail.html}")],
+                            thread_id=thread_id
+                        )
+                        logger.info(f"Processed email from {thread_id}")
+
+            state["last_uid"] = max(state["last_uid"], int(mail.uid))
+            cache = HRCache()
+            await cache.set_email_last_uid(state["last_uid"])
+
+        logger.info(f"Processed {len(new_emails)} new emails")
 
     except Exception as e:
         logger.exception(f"Failed to poll and process emails: {e}")
 
 
 async def start_email_polling():
-    """Initializes and starts the email polling scheduler."""
     email_settings = EmailBotSettings(
         imap_host=settings.EMAIL_BOT_IMAP_HOST,
         smtp_host=settings.EMAIL_BOT_SMTP_HOST,
