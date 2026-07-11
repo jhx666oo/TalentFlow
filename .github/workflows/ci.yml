@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "main", "master" ]
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hr_system
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: 安装后端依赖
+        run: |
+          cd hr-backend/hr-backend
+          pip install --no-cache-dir -r requirements.txt ruff
+      - name: Ruff 代码检查
+        run: |
+          cd hr-backend/hr-backend
+          ruff check --output-format=github .
+      - name: 运行后端测试
+        run: |
+          cd hr-backend/hr-backend
+          pytest -v --tb=short
+        env:
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET_KEY: ci-jwt-secret
+          MAIL_USERNAME: ci@talentflow.dev
+          MAIL_PASSWORD: ci-mail-password
+          DASHSCOPE_API_KEY: ci-dashscope-key
+          DINGTALK_APP_KEY: ci-dingtalk-key
+          DINGTALK_APP_SECRET: ci-dingtalk-secret
+          PADDLE_OCR_ACCESS_TOKEN: ci-paddle-token
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: hr-frontend/hr-frontend-src/package-lock.json
+      - name: 安装前端依赖
+        run: |
+          cd hr-frontend/hr-frontend-src
+          npm ci
+      - name: TypeScript 类型检查
+        run: |
+          cd hr-frontend/hr-frontend-src
+          npm run type-check
+      - name: 构建前端
+        run: |
+          cd hr-frontend/hr-frontend-src
+          npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 验证后端 Docker 镜像可正常构建
+        run: |
+          docker build -t talentflow-backend:ci \
+            ./hr-backend/hr-backend
