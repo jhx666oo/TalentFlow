@@ -40,7 +40,7 @@ jobs:
           script: |
             set -e
 
-            cd /root/TalentFlow
+            cd /opt/talentflow
 
             # 拉取最新代码（含 docker-compose.yml 等）
             git pull origin main
@@ -58,12 +58,13 @@ COMPOSE
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # 拉取新镜像
-            docker compose pull backend
+            docker compose pull backend || true
 
             # 重建并重启
             docker compose up -d --remove-orphans
 
             # 清理旧镜像
             docker image prune -f
+            docker logout ghcr.io
 
             echo "✅ 部署完成！"
