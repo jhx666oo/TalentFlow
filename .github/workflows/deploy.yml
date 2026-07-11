@@ -42,28 +42,28 @@ jobs:
 
             cd /opt/talentflow
 
-            # 拉取最新代码（含 docker-compose.yml 等）
-            git pull origin main
-
-            # 用新镜像更新 services 的 image 字段
-            # 生成一个 docker-compose.override.yml，让 backend 使用新镜像而非本地构建
+            # 生成 override.yml，让 backend 使用 GHCR 上的预构建镜像
             cat > docker-compose.override.yml <<'COMPOSE'
 services:
   backend:
     image: ghcr.io/${{ github.repository }}/backend:latest
     build: []
 COMPOSE
+            echo "✅ docker-compose.override.yml 已生成"
 
             # 登录 ghcr.io
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "✅ GHCR 登录成功"
 
-            # 拉取新镜像
-            docker compose pull backend || true
+            # 拉取最新镜像
+            docker compose pull backend
+            echo "✅ 镜像拉取完成"
 
-            # 重建并重启
+            # 重启服务
             docker compose up -d --remove-orphans
+            echo "✅ 容器已重启"
 
-            # 清理旧镜像
+            # 清理
             docker image prune -f
             docker logout ghcr.io
 
