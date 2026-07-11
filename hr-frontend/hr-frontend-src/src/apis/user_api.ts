@@ -78,7 +78,9 @@ export const getDingtalkAuthorizeUrl = () => {
 export const getDingtalkStatus = () => {
   return request.get<{
     dingding_user: null | {
-      name: string
+      nick: string
+      mobile: string
+      open_id: string
       union_id: string
     }
   }>('/user/dingtalk/account')

@@ -205,3 +205,22 @@ dependencies = [
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple/"
 default = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: 集成测试，依赖数据库/Redis",
+    "slow: 需要较长时间的测试",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 140
+
+[tool.ruff.lint]
+select = ["F"]
+ignore = ["F401", "F541", "F811", "F821", "F841"]
+
+[tool.ruff.format]
+quote-style = "double"
